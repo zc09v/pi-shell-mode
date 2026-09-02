@@ -34,6 +34,10 @@ import { truncateToWidth } from "@earendil-works/pi-tui";
 
 const MAX_LINES = 500; // scrollback capacity
 const VISIBLE_LINES = 24; // how many lines the widget shows
+// Editor border color while shell mode is active. "warning" is yellow in the
+// default themes. Change to any theme color ("accent", "success", "error", ...)
+// or replace the whole function with a raw ANSI string for a custom color.
+const SHELL_BORDER_THEME_COLOR = "warning";
 
 const EXIT_RE = /^(exit|quit|logout|\/shell|\/sh|\/exit)\s*$/i;
 const CLEAR_RE = /^clear\s*$/i;
@@ -53,6 +57,7 @@ export default function (pi: ExtensionAPI) {
     ui: null as any, // ExtensionUIContext (has setWidget/setStatus/theme)
     running: null as AbortController | null,
     prevEditorFactory: undefined as any, // restore this on exit
+    shellBorder: null as ((s: string) => string) | null, // yellow editor border in shell mode
   };
 
   // -------------------------------------------------------------------------
@@ -140,6 +145,9 @@ export default function (pi: ExtensionAPI) {
     // Remember any existing custom editor so we can restore it on exit.
     state.prevEditorFactory = ctx.ui.getEditorComponent?.() ?? undefined;
 
+    // Yellow border so the input box stands out while in shell mode.
+    state.shellBorder = (s: string) => ctx.ui.theme.fg(SHELL_BORDER_THEME_COLOR, s);
+
     ctx.ui.setEditorComponent((tui, _theme, kb) => {
       state.tui = tui;
       return new ShellEditor(tui, _theme, kb);
@@ -170,6 +178,7 @@ export default function (pi: ExtensionAPI) {
     state.ui = null;
     state.tui = null;
     state.prevEditorFactory = undefined;
+    state.shellBorder = null;
   }
 
   function toggle(ctx: ExtensionContext) {
@@ -312,6 +321,10 @@ export default function (pi: ExtensionAPI) {
     }
 
     render(width: number): string[] {
+      // Yellow (warning) border while in shell mode for visibility.
+      if (state.shellBorder) {
+        this.borderColor = state.shellBorder;
+      }
       const lines = super.render(width);
       if (lines.length === 0) return lines;
 
@@ -345,5 +358,6 @@ export default function (pi: ExtensionAPI) {
     state.running = null;
     state.tui = null;
     state.ui = null;
+    state.shellBorder = null;
   });
 }
