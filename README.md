@@ -5,9 +5,9 @@ shell commands as you like, then explicitly leave to return to chat mode.
 
 ## Demo
 
-![pi-shell-mode screenshot](https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_shot.jpg)
+![pi-shell-mode screenshot](https://cdn.jsdelivr.net/gh/zc09v/pi-shell-mode@main/screen/screen_shot.jpg)
 
-[▶ Watch the demo video (MP4)](https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_record.mp4)
+[▶ Watch the demo video (MP4)](https://cdn.jsdelivr.net/gh/zc09v/pi-shell-mode@main/screen/screen_record.mp4)
 
 ## Why
 
