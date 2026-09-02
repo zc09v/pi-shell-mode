@@ -22,6 +22,7 @@ command, so you can:
 | Run a command | type it and press `Enter` |
 | Multi-line command | `Shift+Enter` to add a newline |
 | Change directory | `cd <path>` (remembered across commands) |
+| Interactive program | `vim`, `htop`, `ssh`, `less`, ... (auto-detected) |
 | Clear scrollback | `clear` |
 | Kill running command | `Ctrl+C` |
 | Recall previous command | `Up` / `Down` |
@@ -48,10 +49,13 @@ After installing, restart pi (or `/reload`) to load it.
 
 ## Notes
 
-- Commands run through pi's local bash backend in non-interactive mode, so
-  pipes, redirection, globs, and env vars all work. Interactive programs
-  (vim, htop, ssh, ...) are **not** supported here — use the normal `!command`
-  path or an interactive-shell extension for those.
+- **Interactive programs** (editors, pagers, TUIs, remote shells — see the
+  `DEFAULT_INTERACTIVE_COMMANDS` list) are auto-detected: pi's UI temporarily
+  suspends, the program runs with full terminal access, then the UI restores.
+  Extend the list with the `INTERACTIVE_COMMANDS` env var (comma-separated)
+  and remove entries with `INTERACTIVE_EXCLUDE`.
+- Everything else runs through pi's local bash backend in non-interactive
+  mode, so pipes, redirection, globs, and env vars all work.
 - Shell aliases from your `.bashrc`/`.zshrc` are not expanded by default; see
   the `shellCommandPrefix` setting in pi's docs to enable them.
 - Output is capped to the last 500 lines and the last 24 are shown in the

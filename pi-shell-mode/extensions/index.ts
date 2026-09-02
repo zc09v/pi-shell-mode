@@ -20,6 +20,7 @@
  *   pi -e ./pi-shell-mode/extensions/index.ts
  */
 
+import { spawnSync } from "node:child_process";
 import { statSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
@@ -42,6 +43,70 @@ const SHELL_BORDER_THEME_COLOR = "warning";
 const EXIT_RE = /^(exit|quit|logout|\/shell|\/sh|\/exit)\s*$/i;
 const CLEAR_RE = /^clear\s*$/i;
 const CD_RE = /^cd(?:\s+(.*))?$/i;
+
+// Commands that need a real terminal (editors, pagers, TUIs, remote shells).
+// Extend via INTERACTIVE_COMMANDS (comma-separated) and INTERACTIVE_EXCLUDE.
+const DEFAULT_INTERACTIVE_COMMANDS = [
+  // Editors
+  "vim", "nvim", "vi", "nano", "emacs", "pico", "micro", "helix", "hx", "kak",
+  // Pagers
+  "less", "more", "most",
+  // Interactive git
+  "git commit", "git rebase", "git merge", "git cherry-pick", "git revert",
+  "git add -p", "git add --patch", "git add -i", "git add --interactive",
+  "git stash -p", "git stash --patch", "git reset -p", "git reset --patch",
+  "git checkout -p", "git checkout --patch", "git difftool", "git mergetool",
+  // System monitors
+  "htop", "top", "btop", "glances",
+  // File managers
+  "ranger", "nnn", "lf", "mc", "vifm",
+  // Git TUIs
+  "tig", "lazygit", "gitui",
+  // Fuzzy finders
+  "fzf", "sk",
+  // Remote sessions
+  "ssh", "telnet", "mosh",
+  // Database clients
+  "psql", "mysql", "sqlite3", "mongosh", "redis-cli",
+  // Kubernetes / Docker
+  "kubectl edit", "kubectl exec -it", "docker exec -it", "docker run -it",
+  // Other
+  "tmux", "screen", "ncdu",
+];
+
+function getInteractiveCommands(): string[] {
+  const additional =
+    process.env.INTERACTIVE_COMMANDS?.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
+  const excluded = new Set(
+    process.env.INTERACTIVE_EXCLUDE?.split(",")
+      .map((s) => s.trim().toLowerCase()) ?? [],
+  );
+  return [...DEFAULT_INTERACTIVE_COMMANDS, ...additional].filter(
+    (cmd) => !excluded.has(cmd.toLowerCase()),
+  );
+}
+
+function isInteractiveCommand(command: string): boolean {
+  const trimmed = command.trim().toLowerCase();
+  for (const cmd of getInteractiveCommands()) {
+    const c = cmd.toLowerCase();
+    // Match at the start of the command.
+    if (trimmed === c || trimmed.startsWith(`${c} `) || trimmed.startsWith(`${c}\t`)) {
+      return true;
+    }
+    // Match after a pipe: "cat file | less".
+    const pipeIdx = trimmed.lastIndexOf("|");
+    if (pipeIdx !== -1) {
+      const afterPipe = trimmed.slice(pipeIdx + 1).trim();
+      if (afterPipe === c || afterPipe.startsWith(`${c} `)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 export default function (pi: ExtensionAPI) {
   // pi's local bash backend (respects the configured shell, streams output).
@@ -190,6 +255,49 @@ export default function (pi: ExtensionAPI) {
   // Command execution
   // -------------------------------------------------------------------------
 
+  // Hand the terminal over to an interactive program (vim, htop, ssh, ...).
+  function runInteractive(command: string) {
+    const tui = state.tui;
+    if (!tui) {
+      pushLines("[shell] no terminal available for interactive command");
+      refreshWidget();
+      return;
+    }
+
+    let status: number | null = null;
+    let signal: string | null = null;
+    let errorMsg: string | null = null;
+    try {
+      tui.stop();
+      process.stdout.write("\x1b[2J\x1b[H");
+      const shell = process.env.SHELL || "/bin/sh";
+      const result = spawnSync(shell, ["-c", command], {
+        stdio: "inherit",
+        cwd: state.cwd,
+        env: process.env,
+      });
+      status = result.status ?? null;
+      signal = result.signal ?? null;
+      errorMsg = result.error?.message ?? null;
+    } finally {
+      try {
+        tui.start();
+      } catch {
+        /* ignore */
+      }
+      try {
+        tui.requestRender(true);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (errorMsg) pushLines(`[shell] ${errorMsg}`);
+    else if (signal) pushLines(`[killed by ${signal}]`);
+    else if (status !== null && status !== 0) pushLines(`[exit ${status}]`);
+    refreshWidget();
+  }
+
   async function runCommand(raw: string) {
     const trimmed = raw.trim();
     if (!trimmed) return;
@@ -223,6 +331,12 @@ export default function (pi: ExtensionAPI) {
       }
       updateStatus();
       refreshWidget();
+      return;
+    }
+
+    // Interactive programs (vim, htop, ssh, ...) get the terminal handed over.
+    if (isInteractiveCommand(trimmed)) {
+      runInteractive(trimmed);
       return;
     }
 
