@@ -3,6 +3,12 @@
 A persistent **shell (command line) mode** for pi. Enter the mode, run as many
 shell commands as you like, then explicitly leave to return to chat mode.
 
+## Demo
+
+![pi-shell-mode screenshot](https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_shot.jpg)
+
+[▶ Watch the demo video (MP4)](https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_record.mp4)
+
 ## Why
 
 Normally each `!command` runs a single command and sends its output to the

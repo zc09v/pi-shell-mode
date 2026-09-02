@@ -25,7 +25,9 @@
   "pi": {
     "extensions": [
       "./extensions"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_shot.jpg",
+    "video": "https://raw.githubusercontent.com/zc09v/pi-shell-mode/main/screen/screen_record.mp4"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
