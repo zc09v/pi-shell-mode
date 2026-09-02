@@ -1,0 +1,14 @@
+{
+  "name": "pi-shell-mode",
+  "version": "0.1.0",
+  "description": "A shell (command line) mode for pi — run multiple shell commands without the ! prefix",
+  "keywords": ["pi-package"],
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  }
+}
