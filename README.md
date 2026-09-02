@@ -35,14 +35,20 @@ current working directory.
 ## Install
 
 ```bash
-# global (all projects)
-pi install ./pi-shell-mode
+# from npm (recommended)
+pi install npm:pi-shell-mode
 
-# project-local
-pi install -l ./pi-shell-mode
+# from this git repository
+pi install git:github.com/zc09v/pi-shell-mode
+
+# local checkout (global)
+pi install .
+
+# local checkout (project-local)
+pi install -l .
 
 # quick test without installing
-pi -e ./pi-shell-mode/extensions/index.ts
+pi -e ./extensions/index.ts
 ```
 
 After installing, restart pi (or `/reload`) to load it.
